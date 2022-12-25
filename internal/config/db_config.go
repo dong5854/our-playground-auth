@@ -12,6 +12,8 @@ import (
 
 	"github.com/Team-OurPlayground/our-playground-auth/ent"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/customerror"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var db *sql.DB
