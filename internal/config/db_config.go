@@ -7,8 +7,10 @@ import (
 	"log"
 	"time"
 
-	"entgo.io/ent/examples/fs/ent"
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 
+	"github.com/Team-OurPlayground/our-playground-auth/ent"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/customerror"
 )
 
@@ -35,7 +37,7 @@ func MysqlInitialize() error {
 	var err error
 	db, err = sql.Open("mysql", connStr)
 	if err != nil {
-		return customerror.Wrap(err, customerror.DBConnection, "failed to connect to database")
+		return customerror.Wrap(err, customerror.ErrDBConnection, "failed to connect to database")
 	}
 
 	db.SetMaxIdleConns(10)
@@ -44,7 +46,7 @@ func MysqlInitialize() error {
 	db.SetConnMaxIdleTime(time.Minute * 3)
 	err = db.Ping()
 	if err != nil {
-		return customerror.Wrap(err, customerror.DBConnection, "failed to ping the database")
+		return customerror.Wrap(err, customerror.ErrDBConnection, "failed to ping the database")
 	}
 
 	return nil
@@ -52,7 +54,7 @@ func MysqlInitialize() error {
 
 func GetDBInstance() *sql.DB {
 	if db == nil {
-		log.Panic(customerror.New(customerror.DBConnection, "DB has not been initialized"))
+		log.Panic(customerror.New(customerror.ErrDBConnection, "DB has not been initialized"))
 	}
 	return db
 }
@@ -66,19 +68,32 @@ func EntMysqlInitialize() {
 		GetEnv("DB_PW"))
 
 	var err error
-	entClient, err = ent.Open("mysql", connStr)
+	db, err = sql.Open("mysql", connStr)
 	if err != nil {
-		log.Fatal(customerror.Wrap(err, customerror.DBConnection, "failed to connect to database"))
+		log.Fatal(customerror.Wrap(err, customerror.ErrDBConnection, "failed to connect to database"))
 	}
 
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(10)
+	db.SetConnMaxLifetime(time.Minute * 3)
+	db.SetConnMaxIdleTime(time.Minute * 3)
+
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(customerror.Wrap(err, customerror.ErrDBConnection, "failed to ping the database"))
+	}
+
+	drv := entsql.OpenDB(dialect.MySQL, db)
+	entClient = ent.NewClient(ent.Driver(drv))
+
 	if err = entClient.Schema.Create(context.Background()); err != nil {
-		log.Fatal(customerror.Wrap(err, customerror.DBConnection, "failed creating schema resources"))
+		log.Fatal(customerror.Wrap(err, customerror.ErrDBInternal, "failed creating schema resources"))
 	}
 }
 
 func GetEntClient() *ent.Client {
 	if entClient == nil {
-		log.Panic(customerror.New(customerror.DBConnection, "entClient has not been initialized"))
+		log.Panic(customerror.New(customerror.ErrDBConnection, "entClient has not been initialized"))
 	}
 	return entClient
 }
