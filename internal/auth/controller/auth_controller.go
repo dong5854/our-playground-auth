@@ -22,7 +22,7 @@ func NewAuthController(authService service.AuthService) *Auth {
 func (a *Auth) SignUp(c echo.Context) (err error) {
 	req := new(dto.SignUpRequest)
 	if err = c.Bind(req); err != nil {
-		return c.String(http.StatusBadRequest, "bad request")
+		return c.String(http.StatusBadRequest, "request binding error")
 	}
 
 	err = a.authService.SignUp(req)
