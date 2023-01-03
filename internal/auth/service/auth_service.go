@@ -33,6 +33,17 @@ func (a *authServiceImpl) SignUp(request *dto.SignUpRequest) error {
 	return nil
 }
 
-func (a *authServiceImpl) SignIn(request *dto.SignInRequest) error {
-	return nil
+func (a *authServiceImpl) SignIn(request *dto.SignInRequest) (bool, error) {
+	user, err := a.userRepository.FindUserInfoByEmail(request.Email)
+	if err != nil {
+		return false, err
+	}
+	return validateUser(user, request.Password), nil
+}
+
+func validateUser(user *model.User, password string) bool {
+	if user.Password != encrypt.Sha256(password) {
+		return false
+	}
+	return true
 }
