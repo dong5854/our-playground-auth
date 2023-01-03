@@ -34,5 +34,19 @@ func (a *Auth) SignUp(c echo.Context) (err error) {
 }
 
 func (a *Auth) SignIn(c echo.Context) (err error) {
-	return nil
+	req := new(dto.SignInRequest)
+	if err = c.Bind(&req); err != nil {
+		return c.String(http.StatusBadRequest, "request binding error")
+	}
+
+	ok, err := a.authService.SignIn(req)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "internal server error")
+	}
+	if !ok {
+		return c.String(http.StatusUnauthorized, "failed to sign in")
+	}
+	resp, err := a.authService.GetToken(req.Email)
+	print(resp)
+	return c.JSON(http.StatusOK, resp)
 }
