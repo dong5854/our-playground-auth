@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Team-OurPlayground/our-playground-auth/ent"
+	user2 "github.com/Team-OurPlayground/our-playground-auth/ent/user"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/model"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/customerror"
@@ -32,6 +33,26 @@ func (u *userRepository) CreateUser(user *model.User) error {
 		return customerror.Wrap(err, customerror.ErrDBInternal, "CreateUser error")
 	}
 	return nil
+}
+
+func (u *userRepository) FindUserInfoByEmail(email string) (*model.User, error) {
+	user, err := u.entClient.User.
+		Query().
+		Where(user2.Email(email)).
+		Only(context.TODO())
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrDBInternal, "FindUserInfoByEmail error")
+	}
+
+	return &model.User{
+		ID:        user.ID,
+		Email:     user.Email,
+		Password:  user.Password,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		IsAdmin:   user.IsAdmin,
+	}, nil
 }
 
 func (u *userRepository) FindUserInfoByID(id int) (*model.User, error) {
