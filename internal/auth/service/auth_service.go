@@ -5,6 +5,7 @@ import (
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/model"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/customerror"
+	"github.com/Team-OurPlayground/our-playground-auth/internal/util/encrypt"
 )
 
 type authServiceImpl struct {
@@ -21,7 +22,7 @@ func (a *authServiceImpl) SignUp(request *dto.SignUpRequest) error {
 	user := &model.User{
 		UserName:  request.UserName,
 		Email:     request.Email,
-		Password:  request.Password,
+		Password:  encrypt.Sha256(request.Password),
 		FirstName: request.FirstName,
 		LastName:  request.LastName,
 		IsAdmin:   false,
