@@ -3,9 +3,11 @@ package service
 import (
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/controller/dto"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository"
+	"github.com/Team-OurPlayground/our-playground-auth/internal/config"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/model"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/customerror"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/encrypt"
+	"github.com/Team-OurPlayground/our-playground-auth/internal/util/jwt"
 )
 
 type authServiceImpl struct {
@@ -46,4 +48,16 @@ func validateUser(user *model.User, password string) bool {
 		return false
 	}
 	return true
+}
+
+func (a *authServiceImpl) GetToken(email string) (*dto.SignInResponse, error) {
+	resp := new(dto.SignInResponse)
+	var err error
+	resp.Token.AccessToken, err = jwt.GenerateAccessToken(config.GetPrivateKey(), email)
+	resp.Token.RefreshToken, err = jwt.GenerateRefreshToken(config.GetPrivateKey(), email)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
