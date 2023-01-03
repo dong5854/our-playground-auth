@@ -28,4 +28,5 @@ func registerRoute(e *echo.Echo) {
 
 func setUserGroup(group *echo.Group, controller *controller.Auth) {
 	group.POST("", controller.SignUp)
+	group.POST("/sign-in", controller.SignIn)
 }
