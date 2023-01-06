@@ -52,3 +52,17 @@ func (a *Auth) SignIn(c echo.Context) (err error) {
 	}
 	return c.JSON(http.StatusOK, resp)
 }
+
+func (a *Auth) Refresh(c echo.Context) (err error) {
+	req := new(dto.RefreshRequest)
+	if err = c.Bind(&req); err != nil {
+		return c.String(http.StatusBadRequest, "request binding error")
+	}
+
+	resp, err := a.authService.Refresh(req)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "authService.Refresh error: Refresh")
+	}
+
+	return c.JSON(http.StatusOK, resp)
+}
