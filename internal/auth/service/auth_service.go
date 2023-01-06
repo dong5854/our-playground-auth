@@ -1,13 +1,13 @@
 package service
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"time"
 
+	gojwt "github.com/golang-jwt/jwt"
+
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/controller/dto"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository"
-	"github.com/Team-OurPlayground/our-playground-auth/internal/config"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/model"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/customerror"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/util/encrypt"
@@ -59,11 +59,11 @@ func validateUser(user *model.User, password string) bool {
 func (a *authServiceImpl) GetToken(email string) (*dto.SignInResponse, error) {
 	resp := new(dto.SignInResponse)
 	var err error
-	resp.Token.AccessToken, err = jwt.GenerateAccessToken(config.GetPrivateKey(), email)
+	resp.Token.AccessToken, err = jwt.GenerateAccessToken(jwt.GetPrivateKey(), email)
 	if err != nil {
 		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.GenerateAccessToken error: GetToken")
 	}
-	resp.Token.RefreshToken, err = jwt.GenerateRefreshToken(config.GetPrivateKey(), email)
+	resp.Token.RefreshToken, err = jwt.GenerateRefreshToken(jwt.GetPrivateKey(), email)
 	if err != nil {
 		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.GenerateRefreshToken error: GetToken")
 	}
@@ -76,7 +76,7 @@ func (a *authServiceImpl) GetToken(email string) (*dto.SignInResponse, error) {
 
 func (a *authServiceImpl) saveTokenPair(email string, accessToken string, refreshToken string) error {
 	refreshTokenClaims := new(jwt.CustomClaims)
-	refreshTokenByte, err := base64.StdEncoding.DecodeString(refreshToken)
+	refreshTokenByte, err := gojwt.DecodeSegment(refreshToken)
 	err = json.Unmarshal(refreshTokenByte, refreshTokenClaims)
 	if err != nil {
 		return customerror.Wrap(err, customerror.ErrInternalServer, "json.Unmarshal error: saveTokenPair")
@@ -92,4 +92,43 @@ func (a *authServiceImpl) saveTokenPair(email string, accessToken string, refres
 		return customerror.Wrap(err, customerror.ErrInternalServer, "tokenPairRepository.CreateTokenPair: saveTokenPair")
 	}
 	return err
+}
+
+func (a *authServiceImpl) Refresh(request *dto.RefreshRequest) (*dto.RefreshResponse, error) {
+	token, err := a.verifyRefresh(request.AccessToken, request.RefreshToken)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.VerifyToken error: Refresh")
+	}
+	resp := new(dto.RefreshResponse)
+	resp.Token.AccessToken, err = jwt.GenerateAccessToken(jwt.GetPrivateKey(), token.Email)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.GenerateAccessToken error: Refresh")
+	}
+	resp.Token.RefreshToken, err = jwt.GenerateRefreshToken(jwt.GetPrivateKey(), token.Email)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.GenerateRefreshToken error: Refresh")
+	}
+	err = a.saveTokenPair(token.Email, resp.Token.AccessToken, resp.Token.RefreshToken)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "authServiceImpl.saveTokenPair error: Refresh")
+	}
+	return resp, nil
+}
+
+func (a *authServiceImpl) verifyRefresh(accessToken string, refreshToken string) (*jwt.CustomClaims, error) {
+	token, err := jwt.VerifyToken(refreshToken)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.VerifyToken error: verifyRefreshToken")
+	}
+	tokenPairModel, err := a.tokenPairRepository.GetTokenPairByEmail(token.Email)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrDBInternal, "tokenPairRepository.GetTokenPairByEmail error: verifyRefreshToken")
+	}
+	if tokenPairModel.AccessToken != accessToken {
+		return nil, customerror.New(customerror.ErrInternalServer, "accessToken doesn't match")
+	}
+	if tokenPairModel.RefreshToken != refreshToken {
+		return nil, customerror.New(customerror.ErrInternalServer, "refreshToken doesn't match")
+	}
+	return token, err
 }
