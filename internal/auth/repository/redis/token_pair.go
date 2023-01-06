@@ -24,9 +24,13 @@ func NewTokenPairRepository(client *redis.Client) repository.TokenPairRepository
 
 func (t *tokenPairRepository) CreateTokenPair(tokenPair *model.TokenPair) error {
 	expiration := tokenPair.ExpiresAt.Sub(time.Now())
-	err := t.redisClient.Set(context.TODO(), tokenPair.Email, tokenPair, expiration).Err()
+	tokenPairByte, err := json.Marshal(tokenPair)
 	if err != nil {
-		return customerror.Wrap(err, customerror.ErrDBInternal, "CreateTokenPair error")
+		return customerror.Wrap(err, customerror.ErrInternalServer, "json.Marshal error: CreateTokenPair")
+	}
+	err = t.redisClient.Set(context.TODO(), tokenPair.Email, tokenPairByte, expiration).Err()
+	if err != nil {
+		return customerror.Wrap(err, customerror.ErrDBInternal, "CreateTokenPair error: CreateTokenPair")
 	}
 	return nil
 }
@@ -46,9 +50,13 @@ func (t *tokenPairRepository) GetTokenPairByEmail(email string) (*model.TokenPai
 
 func (t *tokenPairRepository) UpdateTokenPair(tokenPair *model.TokenPair) error {
 	expiration := tokenPair.ExpiresAt.Sub(time.Now())
-	err := t.redisClient.Set(context.TODO(), tokenPair.Email, tokenPair, expiration).Err()
+	tokenPairByte, err := json.Marshal(tokenPair)
 	if err != nil {
-		return customerror.Wrap(err, customerror.ErrDBInternal, "UpdateTokenPair error")
+		return customerror.Wrap(err, customerror.ErrInternalServer, "json.Marshal error: UpdateTokenPair")
+	}
+	err = t.redisClient.Set(context.TODO(), tokenPair.Email, tokenPairByte, expiration).Err()
+	if err != nil {
+		return customerror.Wrap(err, customerror.ErrDBInternal, "UpdateTokenPair error: UpdateTokenPair")
 	}
 	return nil
 }
