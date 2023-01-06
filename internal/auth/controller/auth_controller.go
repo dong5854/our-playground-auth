@@ -47,6 +47,8 @@ func (a *Auth) SignIn(c echo.Context) (err error) {
 		return c.String(http.StatusUnauthorized, "failed to sign in")
 	}
 	resp, err := a.authService.GetToken(req.Email)
-	print(resp)
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "GetToken error: SignIn")
+	}
 	return c.JSON(http.StatusOK, resp)
 }
