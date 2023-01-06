@@ -1,6 +1,9 @@
 package service
 
 import (
+	"encoding/json"
+	"time"
+
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/controller/dto"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/config"
@@ -11,12 +14,14 @@ import (
 )
 
 type authServiceImpl struct {
-	userRepository repository.UserRepository
+	userRepository      repository.UserRepository
+	tokenPairRepository repository.TokenPairRepository
 }
 
-func NewAuthService(userRepository repository.UserRepository) AuthService {
+func NewAuthService(userRepository repository.UserRepository, tokenPairRepository repository.TokenPairRepository) AuthService {
 	return &authServiceImpl{
-		userRepository: userRepository,
+		userRepository:      userRepository,
+		tokenPairRepository: tokenPairRepository,
 	}
 }
 
@@ -54,10 +59,35 @@ func (a *authServiceImpl) GetToken(email string) (*dto.SignInResponse, error) {
 	resp := new(dto.SignInResponse)
 	var err error
 	resp.Token.AccessToken, err = jwt.GenerateAccessToken(config.GetPrivateKey(), email)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.GenerateAccessToken error: GetToken")
+	}
 	resp.Token.RefreshToken, err = jwt.GenerateRefreshToken(config.GetPrivateKey(), email)
 	if err != nil {
-		return nil, err
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "jwt.GenerateRefreshToken error: GetToken")
 	}
-
+	err = a.saveTokenPair(email, resp.Token.AccessToken, resp.Token.RefreshToken)
+	if err != nil {
+		return nil, customerror.Wrap(err, customerror.ErrInternalServer, "saveTokenPair error: GetToken")
+	}
 	return resp, nil
+}
+
+func (a *authServiceImpl) saveTokenPair(email string, accessToken string, refreshToken string) error {
+	refreshTokenClaims := new(jwt.CustomClaims)
+	err := json.Unmarshal([]byte(refreshToken), refreshTokenClaims)
+	if err != nil {
+		return customerror.Wrap(err, customerror.ErrInternalServer, "json.Unmarshal error: saveTokenPair")
+	}
+	tokenPairModel := &model.TokenPair{
+		Email:        email,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresAt:    time.Unix(refreshTokenClaims.ExpiresAt, 0),
+	}
+	err = a.tokenPairRepository.CreateTokenPair(tokenPairModel)
+	if err != nil {
+		return customerror.Wrap(err, customerror.ErrInternalServer, "tokenPairRepository.CreateTokenPair: saveTokenPair")
+	}
+	return err
 }
