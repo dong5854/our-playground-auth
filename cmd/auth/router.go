@@ -5,6 +5,7 @@ import (
 
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/controller"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository/entgo"
+	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/repository/redis"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/service"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/config"
 )
@@ -19,7 +20,8 @@ func SetupApp() *echo.Echo {
 
 func registerRoute(e *echo.Echo) {
 	userRepository := entgo.NewUserRepository(config.GetEntClient())
-	authService := service.NewAuthService(userRepository)
+	tokenPairRepository := redis.NewTokenPairRepository(config.GetRedisClient())
+	authService := service.NewAuthService(userRepository, tokenPairRepository)
 	authController := controller.NewAuthController(authService)
 
 	userGroup := e.Group("/users")
