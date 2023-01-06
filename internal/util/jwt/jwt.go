@@ -89,3 +89,16 @@ func GenerateRefreshToken(privateKey *rsa.PrivateKey, email string) (string, err
 
 	return jwtToken, nil
 }
+
+func VerifyToken(tokenString string) (*CustomClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, new(CustomClaims), func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, customerror.New(customerror.ErrInternalServer, "Unexpected signing method: %v", token.Header["alg"])
+		}
+		return GetPublicKey(), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return token.Claims.(*CustomClaims), nil
+}
