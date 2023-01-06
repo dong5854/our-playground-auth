@@ -9,7 +9,6 @@ const port = "8080"
 func main() {
 	config.EntMysqlInitialize()
 	config.RedisInitialize()
-	config.InitJWTKeys()
 	client := config.GetEntClient()
 	defer client.Close()
 
