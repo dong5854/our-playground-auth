@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"time"
 
@@ -75,7 +76,8 @@ func (a *authServiceImpl) GetToken(email string) (*dto.SignInResponse, error) {
 
 func (a *authServiceImpl) saveTokenPair(email string, accessToken string, refreshToken string) error {
 	refreshTokenClaims := new(jwt.CustomClaims)
-	err := json.Unmarshal([]byte(refreshToken), refreshTokenClaims)
+	refreshTokenByte, err := base64.StdEncoding.DecodeString(refreshToken)
+	err = json.Unmarshal(refreshTokenByte, refreshTokenClaims)
 	if err != nil {
 		return customerror.Wrap(err, customerror.ErrInternalServer, "json.Unmarshal error: saveTokenPair")
 	}
