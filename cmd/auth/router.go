@@ -24,8 +24,15 @@ func registerRoute(e *echo.Echo) {
 	authService := service.NewAuthService(userRepository, tokenPairRepository)
 	authController := controller.NewAuthController(authService)
 
+	rootGroup := e.Group("")
+	setRootGroup(rootGroup, authController)
+
 	userGroup := e.Group("/users")
 	setUserGroup(userGroup, authController)
+}
+
+func setRootGroup(group *echo.Group, controller *controller.Auth) {
+	group.GET("public-key", controller.GetPublicKey)
 }
 
 func setUserGroup(group *echo.Group, controller *controller.Auth) {

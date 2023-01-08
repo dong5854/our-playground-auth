@@ -7,6 +7,7 @@ import (
 
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/controller/dto"
 	"github.com/Team-OurPlayground/our-playground-auth/internal/auth/service"
+	"github.com/Team-OurPlayground/our-playground-auth/internal/util/jwt"
 )
 
 type Auth struct {
@@ -17,6 +18,10 @@ func NewAuthController(authService service.AuthService) *Auth {
 	return &Auth{
 		authService: authService,
 	}
+}
+
+func (a *Auth) GetPublicKey(c echo.Context) (err error) {
+	return c.String(http.StatusOK, string(jwt.GetRawPublicKey()))
 }
 
 func (a *Auth) SignUp(c echo.Context) (err error) {
