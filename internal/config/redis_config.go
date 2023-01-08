@@ -26,7 +26,7 @@ func RedisInitialize() {
 
 func GetRedisClient() *redis.Client {
 	if redisClient == nil {
-		log.Panic(customerror.New(customerror.ErrDBConnection, "redisClient has not been initialized"))
+		log.Fatal(customerror.New(customerror.ErrDBConnection, "redisClient has not been initialized"))
 	}
 	return redisClient
 }
