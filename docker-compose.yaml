@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  our-playground-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "5"
+        max-size: "100m"
+    env_file:
+      - docker.env
+    environment:
+      CORS_MODE: ${CORS_MODE}
+    restart: on-failure
+    depends_on:
+      - auth-redis
+      - auth-mysql
+
+  auth-redis:
+    image: redis:7.0.7
+    container_name: authRedis
+    volumes:
+      - ~/dev/redis/data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  auth-mysql:
+    platform: linux/amd64
+    container_name: authDB
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    ports:
+      - "3306:3306"
+    secrets:
+      - db_root_password
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+    cap_add:
+      - SYS_NICE
+    volumes:
+      - ~/dev/mysql:/var/lib/mysql:rw
+    user: mysql
+    restart: on-failure
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+
+secrets:
+  db_root_password:
+    file: ./secret_mysql.txt
