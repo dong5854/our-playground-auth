@@ -1,3 +1,4 @@
 *.env
 .idea
 private*
+secret_mysql.txt
