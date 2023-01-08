@@ -19,12 +19,11 @@ import (
 var db *sql.DB
 var entClient *ent.Client
 
-func CreateConnectionString(dbName string, host string, port string, userName string, password string) string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+func CreateConnectionString(dbName string, host string, userName string, password string) string {
+	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true",
 		userName,
 		password,
 		host,
-		port,
 		dbName)
 }
 
@@ -32,7 +31,6 @@ func MysqlInitialize() error {
 	connStr := CreateConnectionString(
 		GetEnv("DB_NAME"),
 		GetEnv("DB_HOST"),
-		GetEnv("DB_PORT"),
 		GetEnv("DB_USER"),
 		GetEnv("DB_PW"))
 
@@ -56,7 +54,7 @@ func MysqlInitialize() error {
 
 func GetDBInstance() *sql.DB {
 	if db == nil {
-		log.Panic(customerror.New(customerror.ErrDBConnection, "DB has not been initialized"))
+		log.Fatal(customerror.New(customerror.ErrDBConnection, "DB has not been initialized"))
 	}
 	return db
 }
@@ -65,7 +63,6 @@ func EntMysqlInitialize() {
 	connStr := CreateConnectionString(
 		GetEnv("DB_NAME"),
 		GetEnv("DB_HOST"),
-		GetEnv("DB_PORT"),
 		GetEnv("DB_USER"),
 		GetEnv("DB_PW"))
 
@@ -95,7 +92,7 @@ func EntMysqlInitialize() {
 
 func GetEntClient() *ent.Client {
 	if entClient == nil {
-		log.Panic(customerror.New(customerror.ErrDBConnection, "entClient has not been initialized"))
+		log.Fatal(customerror.New(customerror.ErrDBConnection, "entClient has not been initialized"))
 	}
 	return entClient
 }

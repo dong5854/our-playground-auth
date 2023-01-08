@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"crypto/rsa"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -23,7 +24,7 @@ func InitJWTKeys() {
 	once.Do(func() {
 		currentDIR, err := os.Getwd()
 		if err != nil {
-			panic(customerror.Wrap(err, customerror.ErrInternalServer, "os.Getwd() error : InitJWTKeys"))
+			log.Fatal(customerror.Wrap(err, customerror.ErrInternalServer, "os.Getwd() error : InitJWTKeys"))
 		}
 
 		var (
@@ -33,22 +34,22 @@ func InitJWTKeys() {
 
 		rawPrivateKey, err = os.ReadFile(privateKeyPath)
 		if err != nil {
-			panic(customerror.Wrap(err, customerror.ErrInternalServer, "os.ReadFile(privateKeyPath) error : InitJWTKeys"))
+			log.Fatal(customerror.Wrap(err, customerror.ErrInternalServer, "os.ReadFile(privateKeyPath) error : InitJWTKeys"))
 		}
 
 		rawPublicKey, err = os.ReadFile(publicKeyPath)
 		if err != nil {
-			panic(customerror.Wrap(err, customerror.ErrInternalServer, "os.ReadFile(publicKeyPath) error : InitJWTKeys"))
+			log.Fatal(customerror.Wrap(err, customerror.ErrInternalServer, "os.ReadFile(publicKeyPath) error : InitJWTKeys"))
 		}
 
 		privateKey, err = jwt.ParseRSAPrivateKeyFromPEM(rawPrivateKey)
 		if err != nil {
-			panic(customerror.Wrap(err, customerror.ErrInternalServer, "jwt.ParseRSAPrivateKeyFromPEM(rawPrivateKey) error : InitJWTKeys"))
+			log.Fatal(customerror.Wrap(err, customerror.ErrInternalServer, "jwt.ParseRSAPrivateKeyFromPEM(rawPrivateKey) error : InitJWTKeys"))
 		}
 
 		publicKey, err = jwt.ParseRSAPublicKeyFromPEM(rawPublicKey)
 		if err != nil {
-			panic(customerror.Wrap(err, customerror.ErrInternalServer, "jwt.ParseRSAPublicKeyFromPEM(rawPublicKey) error : InitJWTKeys"))
+			log.Fatal(customerror.Wrap(err, customerror.ErrInternalServer, "jwt.ParseRSAPublicKeyFromPEM(rawPublicKey) error : InitJWTKeys"))
 		}
 	})
 }
