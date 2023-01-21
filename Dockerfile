@@ -4,7 +4,7 @@ FROM golang:1.19.0-buster as build
 ENV GO111MODULE=on
 
 WORKDIR /usr/src/app
-ENV GONOSUMDB=github.com/useb-inc/*
+
 COPY go.mod go.sum ./
 RUN go mod download
 
